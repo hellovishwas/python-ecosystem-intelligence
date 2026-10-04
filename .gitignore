@@ -3,3 +3,5 @@ myenv/
 __pycache__/
 *.pyc
 tempCodeRunnerFile.py
+data/raw/github_checkpoint.csv
+data/processed/github_repositories_topics_final.csv

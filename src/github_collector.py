@@ -38,6 +38,22 @@ categories = [
     "topic:machine-learning",
     "topic:data-science",
     "topic:web",
+    "topic:artificial-intelligence",
+    "topic:deep-learning",
+    "topic:natural-language-processing",
+    "topic:computer-vision",
+    "topic:data-engineering",
+    "topic:cybersecurity",
+    "topic:devops",
+    "topic:cloud",
+    "topic:automation",
+    "topic:database",
+    "topic:django",
+    "topic:flask",
+    "topic:fastapi",
+    "topic:scientific-computing",
+    "topic:robotics",
+    "topic:finance",
 ]
 
 checkpoint_file = "data/raw/github_checkpoint.csv"

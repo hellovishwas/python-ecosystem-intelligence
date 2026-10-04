@@ -11,11 +11,8 @@ import pandas as pd
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 INPUT_FILE = BASE_DIR / "data" / "processed" / "github_repositories_cleaned.csv"
-
 FINAL_FILE = BASE_DIR / "data" / "processed" / "github_repositories_topics_final.csv"
-
 TOPIC_SUMMARY_FILE = BASE_DIR / "data" / "processed" / "github_topic_summary.csv"
-
 CATEGORY_SUMMARY_FILE = BASE_DIR / "data" / "processed" / "github_category_summary.csv"
 
 
@@ -96,7 +93,7 @@ def normalize_topic(topic):
     return topic
 
 
-topics_df["normalized_topic"] = topics_df.loc[
+topics_df.loc[topics_df["has_topic"], "normalized_topic"] = topics_df.loc[
     topics_df["has_topic"], "original_topic"
 ].apply(normalize_topic)
 
@@ -106,66 +103,66 @@ topics_df["normalized_topic"] = topics_df.loc[
 # ============================================================
 
 TOPIC_ALIASES = {
-    # ---------------- PYTHON ----------------
+    # Python
     "python3": "python",
     "python-3": "python",
     "python-2": "python",
-    # ---------------- AI ----------------
+    # AI
     "ai": "artificial-intelligence",
     "artificial-intelligence": "artificial-intelligence",
     "artificial-intelligence-ai": "artificial-intelligence",
-    # ---------------- MACHINE LEARNING ----------------
+    # Machine Learning
     "ml": "machine-learning",
     "machinelearning": "machine-learning",
     "machine-learning": "machine-learning",
-    # ---------------- DEEP LEARNING ----------------
+    # Deep Learning
     "deeplearning": "deep-learning",
     "deep-learning": "deep-learning",
-    # ---------------- LLM ----------------
+    # LLM
     "llm": "large-language-models",
     "llms": "large-language-models",
     "large-language-model": "large-language-models",
     "large-language-models": "large-language-models",
-    # ---------------- NLP ----------------
+    # NLP
     "nlp": "natural-language-processing",
     "natural-language-processing": "natural-language-processing",
-    # ---------------- PYTORCH ----------------
+    # PyTorch
     "torch": "pytorch",
     "pytorch": "pytorch",
-    # ---------------- SCIKIT LEARN ----------------
+    # Scikit Learn
     "sklearn": "scikit-learn",
     "scikit-learn": "scikit-learn",
-    # ---------------- DATA SCIENCE ----------------
+    # Data Science
     "datascience": "data-science",
     "data-science": "data-science",
-    # ---------------- EDA ----------------
+    # EDA
     "eda": "exploratory-data-analysis",
     "exploratory-data-analysis": "exploratory-data-analysis",
-    # ---------------- WEB SCRAPING ----------------
+    # Web Scraping
     "webscraping": "web-scraping",
     "web-scraping": "web-scraping",
     "web-scraper": "web-scraping",
     "webscraper": "web-scraping",
     "scraping": "web-scraping",
-    # ---------------- RAG ----------------
+    # RAG
     "retrieval-augmented-generation": "rag",
     "rag": "rag",
-    # ---------------- AI AGENTS ----------------
+    # AI Agents
     "ai-agent": "ai-agents",
     "ai-agents": "ai-agents",
     "llm-agent": "ai-agents",
     "llm-agents": "ai-agents",
-    # ---------------- TRANSFORMERS ----------------
+    # Transformers
     "transformer": "transformers",
     "transformers": "transformers",
-    # ---------------- CYBERSECURITY ----------------
+    # Cybersecurity
     "cyber-security": "cybersecurity",
     "cybersecurity": "cybersecurity",
-    # ---------------- PENETRATION TESTING ----------------
+    # Penetration Testing
     "pentest": "penetration-testing",
     "pentesting": "penetration-testing",
     "penetration-testing": "penetration-testing",
-    # ---------------- REST ----------------
+    # REST
     "rest": "rest-api",
     "rest-api": "rest-api",
 }
@@ -495,7 +492,59 @@ def assign_category(topic):
     if topic in SOFTWARE_DEVELOPMENT:
         return "Software Development"
 
-    return "Other"
+    if topic in {
+        "openai",
+        "chatgpt",
+        "gpt",
+        "claude",
+        "claude-code",
+        "langchain",
+        "huggingface",
+        "language-model",
+        "llama",
+        "inference",
+        "tts",
+        "chatbot",
+        "agent-skills",
+    }:
+        return "AI & Machine Learning"
+
+    if topic in {
+        "api",
+        "webapp",
+        "scraper",
+        "crawler",
+    }:
+        return "Web Development"
+
+    if topic in {
+        "visualization",
+        "time-series",
+        "forecasting",
+        "optimization",
+        "jax",
+    }:
+        return "Data Science & Analytics"
+
+    if topic in {
+        "cli",
+    }:
+        return "Python & Developer Tools"
+
+    if topic in {
+        "image-processing",
+    }:
+        return "Computer Vision & Image Processing"
+
+    if topic in {
+        "gpu",
+    }:
+        return "AI & Machine Learning"
+
+    # No "Other" category.
+    # Unknown Python/open-source topics are retained
+    # instead of being incorrectly forced into another category.
+    return "General Python & Open Source"
 
 
 topics_df["category"] = topics_df["final_topic"].apply(assign_category)
@@ -514,12 +563,8 @@ topics_df = topics_df.drop_duplicates(subset=["url", "final_topic"]).reset_index
 # 11. FINAL DATASET
 # ============================================================
 
-# Remove temporary column
 topics_df = topics_df.drop(columns=["has_topic"])
 
-
-# Keep ALL original columns
-# + analytical topic columns
 
 new_columns = [
     "original_topic",
@@ -528,9 +573,11 @@ new_columns = [
     "category",
 ]
 
+
 final_columns = original_columns + [
     col for col in new_columns if col not in original_columns
 ]
+
 
 final_df = topics_df[final_columns].copy()
 
@@ -538,8 +585,6 @@ final_df = topics_df[final_columns].copy()
 # ============================================================
 # 12. TOPIC-LEVEL DATA
 # ============================================================
-
-# One repository contributes only ONCE to one topic.
 
 repo_topic = (
     final_df[final_df["final_topic"] != "no-topic"]
@@ -558,9 +603,6 @@ topic_summary = (
         maximum_stars=("stars", "max"),
         total_forks=("forks", "sum"),
         average_forks=("forks", "mean"),
-        total_watchers=("watchers", "sum"),
-        average_watchers=("watchers", "mean"),
-        maximum_watchers=("watchers", "max"),
         total_open_issues=("open_issues", "sum"),
         average_open_issues=("open_issues", "mean"),
         average_repo_size=("repo_size", "mean"),
@@ -575,23 +617,9 @@ topic_summary = (
 # 13. REPOSITORY + CATEGORY LEVEL
 # ============================================================
 
-# IMPORTANT:
-#
-# Repo A:
-# pandas     -> Data Science -> 80 watchers
-# numpy      -> Data Science -> 80 watchers
-#
-# must become:
-#
-# Repo A -> Data Science -> 80 watchers
-#
-# BEFORE category totals are calculated.
-
-
 repo_category = repo_topic.groupby(["url", "category"], as_index=False).agg(
     stars=("stars", "first"),
     forks=("forks", "first"),
-    watchers=("watchers", "first"),
     open_issues=("open_issues", "first"),
     repo_size=("repo_size", "first"),
     created_year=("created_year", "first"),
@@ -613,8 +641,6 @@ category_summary = (
         average_stars=("stars", "mean"),
         total_forks=("forks", "sum"),
         average_forks=("forks", "mean"),
-        total_watchers=("watchers", "sum"),
-        average_watchers=("watchers", "mean"),
         total_open_issues=("open_issues", "sum"),
         average_open_issues=("open_issues", "mean"),
         average_repo_size=("repo_size", "mean"),
@@ -655,7 +681,7 @@ assert not missing_original_columns, (
     f"Missing original columns: {missing_original_columns}"
 )
 
-print("✓ All 21 original columns preserved")
+print("✓ All original columns preserved")
 
 
 # Test 2 — Repository count preserved
@@ -667,7 +693,7 @@ assert final_repository_count == original_repository_count
 print(f"✓ All {original_repository_count} repositories preserved")
 
 
-# Test 3 — New analytical columns exist
+# Test 3 — Analytical columns exist
 
 for col in [
     "original_topic",
@@ -693,18 +719,14 @@ assert duplicate_repo_topics == 0
 print("✓ No duplicate repository-topic combinations")
 
 
-# Test 5 — Topic summary matches repository-topic data
+# Test 5 — Topic summary validation
 
-assert (
-    topic_summary["repository_count"].sum() == repo_topic["url"].nunique()
-    or topic_summary["repository_count"].sum() >= repo_topic["url"].nunique()
-)
+assert topic_summary["repository_count"].sum() >= repo_topic["url"].nunique()
 
 print("✓ Topic summary validated")
 
 
-# Test 6 — Category summary must not double count
-# repositories within the same category
+# Test 6 — No duplicate repository/category
 
 category_repo_pairs = repo_category[["url", "category"]].duplicated().sum()
 
@@ -713,53 +735,53 @@ assert category_repo_pairs == 0
 print("✓ No duplicate repository-category combinations")
 
 
-# Test 7 — Category watcher total is based on
-# one repository per category
-
-calculated_category_watchers = repo_category["watchers"].sum()
-
-summary_category_watchers = category_summary["total_watchers"].sum()
-
-assert calculated_category_watchers == summary_category_watchers
-
-print("✓ Category watcher aggregation validated")
-
-
-# Test 8 — Category stars aggregation
+# Test 7 — Star aggregation
 
 assert repo_category["stars"].sum() == category_summary["total_stars"].sum()
 
 print("✓ Category star aggregation validated")
 
 
-# Test 9 — Category forks aggregation
+# Test 8 — Fork aggregation
 
 assert repo_category["forks"].sum() == category_summary["total_forks"].sum()
 
 print("✓ Category fork aggregation validated")
 
 
-# Test 10 — No empty final topics
+# Test 9 — No empty final topics
 
 assert final_df["final_topic"].notna().all()
 
 print("✓ No empty final_topic values")
 
 
-# Test 11 — No empty categories
+# Test 10 — No empty categories
 
 assert final_df["category"].notna().all()
 
 print("✓ No empty category values")
 
 
+# Test 11 — No "Other" category
+
+assert "Other" not in set(final_df["category"].dropna().unique())
+
+print("✓ No 'Other' category remains")
+
+
 # Test 12 — Alias logic
 
 assert standardize_topic("ai") == "artificial-intelligence"
+
 assert standardize_topic("python3") == "python"
+
 assert standardize_topic("ml") == "machine-learning"
+
 assert standardize_topic("llm") == "large-language-models"
+
 assert standardize_topic("torch") == "pytorch"
+
 assert standardize_topic("sklearn") == "scikit-learn"
 
 print("✓ Topic alias tests passed")
@@ -786,6 +808,7 @@ print("\n" + "=" * 65)
 print("FINAL DATASET REPORT")
 print("=" * 65)
 
+
 print("\nFinal dataset shape:", final_df.shape)
 
 print("Repositories:", final_df["url"].nunique())
@@ -797,6 +820,11 @@ print("Unique categories:", final_df["category"].nunique())
 print("Repositories without topics:", (final_df["final_topic"] == "no-topic").sum())
 
 
+print("\nCategory Distribution:")
+
+print(final_df["category"].value_counts().to_string())
+
+
 print("\nTop 10 Topics:")
 
 print(
@@ -806,7 +834,6 @@ print(
             "category",
             "repository_count",
             "total_stars",
-            "total_watchers",
         ]
     ]
     .head(10)
@@ -822,7 +849,6 @@ print(
             "category",
             "repository_count",
             "total_stars",
-            "total_watchers",
         ]
     ].to_string(index=False)
 )
@@ -831,9 +857,22 @@ print(
 print("\nFiles created:")
 
 print(FINAL_FILE)
+
 print(TOPIC_SUMMARY_FILE)
+
 print(CATEGORY_SUMMARY_FILE)
+
 
 print("\n" + "=" * 65)
 print("✓ ALL VALIDATION TESTS PASSED")
 print("=" * 65)
+
+
+print("\nTop General Python & Open Source Topics:")
+
+print(
+    final_df[final_df["category"] == "General Python & Open Source"]["final_topic"]
+    .value_counts()
+    .head(30)
+    .to_string()
+)
